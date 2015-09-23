@@ -271,6 +271,12 @@ void cleanup() {
   free(B);
   free(C);
   free(R);
+  for (int i = 0; i < 7; ++i) {
+      free(M[i]);
+  }
+  for (int i = 0; i < 4; ++i) {
+      free(C_sub[i]);
+  }
 }
 
 // Main method
