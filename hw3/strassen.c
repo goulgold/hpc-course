@@ -234,13 +234,14 @@ void strassenMM(int N) {
     for (int i=0; i < 7; i++) {
         pthread_join(ids[i], NULL);
     }
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
         pthread_create(&ids[i], NULL, *C_func[i], &N);
     }
-    for (int i=0; i < 3; i++) {
+    for (int i=0; i < 4; i++) {
         pthread_join(ids[i], NULL);
     }
     combine_C(N);
+    printf("seven M funcs took %ld ms\n", timerStop());
 }
 
 // Allocate square matrix.
