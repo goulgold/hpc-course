@@ -87,11 +87,11 @@ void* M_func5(void* N);
 void* M_func6(void* N);
 void* M_func7(void* N);
 void* (*M_func[7])(void*) = {M_func1, M_func2, M_func3, M_func4, M_func5, M_func6, M_func7};
-void C_func1(int N);
-void C_func2(int N);
-void C_func3(int N);
-void C_func4(int N);
-void (*C_func[4])(int) = {C_func1, C_func2, C_func3, C_func4};
+void* C_func1(void* N);
+void* C_func2(void* N);
+void* C_func3(void* N);
+void* C_func4(void* N);
+void* (*C_func[4])(void*) = {C_func1, C_func2, C_func3, C_func4};
 void combine_C(int N);
 
 void* M_func1(void* rank) {
@@ -159,18 +159,26 @@ void* M_func7(void* rank) {
     free(temp_M_1);
     free(temp_M_2);
 }
-void C_func1(int N) {
+void* C_func1(void* rank) {
+    int* rank_ptr = (int *) rank;
+    int N = *rank_ptr;
     mat_add(C_sub[0], M[0], 0, M[3], 0, N);
     mat_add(C_sub[0], C_sub[0], 0, M[6], 0, N);
     mat_sub(C_sub[0], C_sub[0], 0, M[4], 0, N);
 }
-void C_func2(int N) {
+void* C_func2(void* rank) {
+    int* rank_ptr = (int *) rank;
+    int N = *rank_ptr;
     mat_add(C_sub[1], M[2], 0, M[4], 0, N);
 }
-void C_func3(int N) {
+void* C_func3(void* rank) {
+    int* rank_ptr = (int *) rank;
+    int N = *rank_ptr;
     mat_add(C_sub[2], M[1], 0, M[3], 0, N);
 }
-void C_func4(int N) {
+void* C_func4(void* rank) {
+    int* rank_ptr = (int *) rank;
+    int N = *rank_ptr;
     mat_add(C_sub[3], M[0], 0, M[2], 0, N);
     mat_add(C_sub[3], C_sub[3], 0, M[5], 0, N);
     mat_sub(C_sub[3], C_sub[3], 0, M[1], 0, N);
@@ -206,8 +214,6 @@ void strassenMM(int N) {
         new_N *= 2;
     }
     // pad matrix
-
-    timerStart();
     if (N != new_N) {
         mat_pad(&A, N, new_N);
         mat_pad(&B, N, new_N);
@@ -220,21 +226,20 @@ void strassenMM(int N) {
         }
 
     }
-    printf("matrix pad took %ld ms\n", timerStop());
     N = new_N;
     pthread_t ids[7];
-    timerStart();
     for (int i = 0; i < 7; ++i) {
         pthread_create(&ids[i], NULL, *M_func[i], &N);
     }
     for (int i=0; i < 7; i++) {
         pthread_join(ids[i], NULL);
     }
-    printf("seven M funcs took %ld ms\n", timerStop());
-    C_func1(N);
-    C_func2(N);
-    C_func3(N);
-    C_func4(N);
+    for (int i = 0; i < 3; ++i) {
+        pthread_create(&ids[i], NULL, *C_func[i], &N);
+    }
+    for (int i=0; i < 3; i++) {
+        pthread_join(ids[i], NULL);
+    }
     combine_C(N);
 }
 
@@ -302,7 +307,7 @@ int main(int argc, char* argv[]) {
 
   // Do simple multiplication and time it.
   timerStart();
-  simpleMM(N);
+  // simpleMM(N);
   printf("Simple MM took %ld ms\n", timerStop());
 
   // Do strassen multiplication and time it.
