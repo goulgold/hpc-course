@@ -7,3 +7,8 @@
 #SBATCH -A TG-CCR150026
 
 ./strassen 15
+./strassen 100
+./strassen 500
+./strassen 800
+./strassen 1000
+./strassen 1200

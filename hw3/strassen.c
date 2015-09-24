@@ -314,7 +314,7 @@ int main(int argc, char* argv[]) {
 
   // Do simple multiplication and time it.
   timerStart();
-  // simpleMM(N);
+  simpleMM(N);
   printf("Simple MM took %ld ms\n", timerStop());
 
   // Do strassen multiplication and time it.
