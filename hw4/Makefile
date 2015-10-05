@@ -1,5 +1,7 @@
 all:
 	icpc trap.c -o trap -lpthread
+	icpc trap_busywait.c -o trap_busywait -lpthread
+	icpc trap_mutex.c -o trap_mutex -lpthread
 
 mac:
 	gcc trap.c -o trap -lpthread -std=gnu99
@@ -8,3 +10,5 @@ mac:
 
 clean:
 	rm -f trap
+	rm -f trap_mutex
+	rm -f trap_busywait
