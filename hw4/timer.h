@@ -10,15 +10,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-clock_t start, diff;
-
+#define NANOS 1000000000LL
+struct timespec start, diff;
 // Starts timer and resets the elapsed time
 void timerStart(){
-  start = clock();
+    int rvalue = clock_gettime(CLOCK_REALTIME, &start);
 }
 
 // Stops the timer and returns elapsed time in msec
 long timerStop(){
-  diff = clock() - start;
-  return (diff * 1000) / CLOCKS_PER_SEC;
+    int rvalue = clock_gettime(CLOCK_REALTIME, &diff);
+    return (diff.tv_sec*NANOS + diff.tv_nsec - start.tv_sec*NANOS - start.tv_nsec) / 1000000.0;
 }
