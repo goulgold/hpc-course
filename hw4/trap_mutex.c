@@ -36,7 +36,7 @@ double f(double a) {
 // refactor the loop in this function to be parallized using pthread.
 void* trap(void* rank) {
     int my_rank = *((int*)rank);
-    printf("My rank is %d\n", my_rank);
+    // printf("My rank is %d\n", my_rank);
     double my_approx = 0.0;
     for (int i = my_rank+1; i < n-1; i += num_thread) {
         my_approx += f(a + i*h);
