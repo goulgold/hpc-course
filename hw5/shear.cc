@@ -15,10 +15,9 @@
 #define MAX_VALUE 10000
 int N, M;
 
-int compare (const void * a, const void * b)
+inline int compare (const void * a, const void * b)
 {
     return ( *(int*)a - *(int*)b  );
-
 }
 
 void LineSort(int **A, int begin, int step, int end) {
@@ -32,8 +31,10 @@ void LineSort(int **A, int begin, int step, int end) {
     }
 }
 void OddEvenRowSort(int **A, int M) {
+#   pragma omp parallel for num_threads(thread_count) \
+        default(none) shared(A, M) private(i)
     for (int i = 0; i < M; ++i) {
-        if (i % 2 == 0) {
+       if (i % 2 == 0) {
             LineSort(A, i*M, 1, i*M + M - 1);
         } else {
             LineSort(A, i*M + M - 1, -1, i*M);
@@ -41,6 +42,8 @@ void OddEvenRowSort(int **A, int M) {
     }
 }
 void OddEvenColSort(int **A, int M) {
+#   pragma omp parallel for num_threads(thread_count) \
+        default(none) shared(A, M) private(i)
     for (int i = 0; i < M; ++i) {
             LineSort(A, i, M, M*(M - 1) + i);
     }
@@ -77,6 +80,7 @@ int **allocMatrix(int size) {
 int main(int argc, char* argv[]) {
   int **A;
   double elapsedTime;
+  int thread_count = 10;
 
   // checking parameters
   if (argc != 2 && argc != 3) {
