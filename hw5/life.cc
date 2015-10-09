@@ -8,7 +8,12 @@
  */
 
 #include "timer.h"
+#include "omp.h"
 #include "io.h"
+
+//DEBUG
+int thread_count = 10;
+
 
 int **allocMatrix(int size);
 
@@ -27,14 +32,18 @@ void conway(int **World, int N, int M){
   // STUDENT: IMPLEMENT THE GAME HERE, make it parallel!
     int now_m; // what generate it is now.
     int **nextWorld = allocMatrix(N);
-
+    int i;
     for (now_m = 0; now_m < M; ++now_m) {
         printMatrix(World, N);
         printf("\n");
-        for (int i = 0; i < N*N; ++i) {
+        # pragma omp parallel for num_threads(thread_count) \
+        default(none) shared(World, nextWorld, N) private(i)
+        for (i = 0; i < N*N; ++i) {
             nextWorld[i/N][i%N] = nextState(World, i/N, i%N, N);
         }
-        for (int i = 0; i < N*N; ++i) {
+        # pragma omp parallel for num_threads(thread_count) \
+        default(none) shared(World, nextWorld, N) private(i)
+        for (i = 0; i < N*N; ++i) {
             World[i/N][i%N] = nextWorld[i/N][i%N];
         }
     }
@@ -88,7 +97,6 @@ int main(int argc, char* argv[]) {
   int N,M;
   int **World;
   double elapsedTime;
-
   // checking parameters
   if (argc != 3 && argc != 4) {
     printf("Parameters: <N> <M> [<file>]\n");

@@ -10,11 +10,52 @@
 #include <math.h>
 #include "timer.h"
 #include "io.h"
+#include <stdlib.h>
 
 #define MAX_VALUE 10000
+int N, M;
+
+int compare (const void * a, const void * b)
+{
+    return ( *(int*)a - *(int*)b  );
+
+}
+
+void LineSort(int **A, int begin, int step, int end) {
+    int *temp_array = new int[M];
+    for (int i = 0; i < M; ++i) {
+        temp_array[i] = A[(begin+i*step)/M][(begin+i*step)%M];
+    }
+    qsort(temp_array, M, sizeof(int), compare);
+    for (int i = 0; i < M; ++i) {
+        A[(begin+i*step)/M][(begin+i*step)%M] = temp_array[i];
+    }
+}
+void OddEvenRowSort(int **A, int M) {
+    for (int i = 0; i < M; ++i) {
+        if (i % 2 == 0) {
+            LineSort(A, i*M, 1, i*M + M - 1);
+        } else {
+            LineSort(A, i*M + M - 1, -1, i*M);
+        }
+    }
+}
+void OddEvenColSort(int **A, int M) {
+    for (int i = 0; i < M; ++i) {
+            LineSort(A, i, M, M*(M - 1) + i);
+    }
+}
 
 void shear_sort(int **A, int M) {
   // Students: Implement parallel shear sort here.
+  int total_step = (int) ceil(log2(M*M)) + 1;
+  for (int i = 0; i < total_step; ++i) {
+      if (i % 2 == 0) { // RowSort
+        OddEvenRowSort(A, M);
+      } else { // ColumnSort
+        OddEvenColSort(A, M);
+      }
+  }
 }
 
 // Allocate square matrix.
@@ -32,9 +73,8 @@ int **allocMatrix(int size) {
   return matrix;
 }
 
-// Main method      
+// Main method
 int main(int argc, char* argv[]) {
-  int N, M;
   int **A;
   double elapsedTime;
 
@@ -44,7 +84,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   N = atoi(argv[1]);
-  M = (int) sqrt(N); 
+  M = (int) sqrt(N);
   if(N != M*M){
     printf("N has to be a perfect square!\n");
     exit(1);
@@ -65,7 +105,7 @@ int main(int argc, char* argv[]) {
       }
     }
   }
-  
+
   // starting timer
   timerStart();
 
