@@ -10,11 +10,64 @@
 #include "timer.h"
 #include "io.h"
 
+int **allocMatrix(int size);
+
+// Function deciding next state of certain node
+int nextState(int **World, int row, int col, int N);
+
+// Function that counts how many neighbors a node has
+int getNeighbor(int **World,int row,int col,int N);
+
+// Function that determine whether a node lives or not.
+inline bool isLive(int value) {
+    return (value != 0);
+}
 // Function implementing Conway's Game of Life
 void conway(int **World, int N, int M){
   // STUDENT: IMPLEMENT THE GAME HERE, make it parallel!
+    int now_m; // what generate it is now.
+    int **nextWorld = allocMatrix(N);
+
+    for (now_m = 0; now_m < M; ++now_m) {
+        printMatrix(World, N);
+        printf("\n");
+        for (int i = 0; i < N*N; ++i) {
+            nextWorld[i/N][i%N] = nextState(World, i/N, i%N, N);
+        }
+        for (int i = 0; i < N*N; ++i) {
+            World[i/N][i%N] = nextWorld[i/N][i%N];
+        }
+    }
+
+    removeMatrix(nextWorld, N);
 }
 
+int getNeighbor(int **World,int row,int col,int N) {
+    int neighbor = 0;
+    for (int i = row-1; i <= row+1; ++i) {
+        for (int j = col-1; j <= col+1; ++j) {
+            if (i == row && j == col) continue;
+            else if(i < 0 || j < 0 || i > N-1 || j > N-1) continue;
+            else if(isLive(World[i][j])) neighbor++;
+            else continue;
+        }
+    }
+    return neighbor;
+}
+int nextState(int **World, int row, int col, int N) {
+    int neighbor = getNeighbor(World, row, col, N);
+    if (neighbor < 2 && isLive(World[row][col])) {
+        return 0;
+    } else if ((neighbor == 2 || neighbor == 3) && isLive(World[row][col])) {
+        return World[row][col] + 1;
+    } else if (neighbor > 3 && isLive(World[row][col])) {
+         return 0;
+    } else if (neighbor == 3 && !isLive(World[row][col])) {
+        return 1;
+    } else {
+        return World[row][col];
+    }
+}
 // Allocate square matrix.
 int **allocMatrix(int size) {
   int **matrix;
@@ -30,7 +83,7 @@ int **allocMatrix(int size) {
   return matrix;
 }
 
-// Main method      
+// Main method
 int main(int argc, char* argv[]) {
   int N,M;
   int **World;
@@ -63,7 +116,7 @@ int main(int argc, char* argv[]) {
   // starting timer
   timerStart();
 
-  // calling conway's game of life 
+  // calling conway's game of life
   conway(World,N,M);
 
   // stopping timer

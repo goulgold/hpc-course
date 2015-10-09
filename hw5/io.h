@@ -2,7 +2,7 @@
  * University of Pittsburgh
  * Department of Computer Science
  * CS1645: Introduction to HPC Systems
- * Instructor Bryan Mills, PhD 
+ * Instructor Bryan Mills, PhD
  * Original Code Esteban Meneses (converted to c)
  * Input/output operations for matrices.
  */
@@ -13,7 +13,7 @@
 int readMatrixFile(int **matrix, int N, char *filename){
 
   FILE *ifp, *ofp;
-  char *mode = "r";
+  char mode[2] = "r";
   ifp = fopen(filename, mode);
 
   if (ifp == NULL) {
@@ -30,6 +30,14 @@ int readMatrixFile(int **matrix, int N, char *filename){
     }
   }
   return 0;
+}
+
+// Remove matrix
+void removeMatrix(int **matrix, int N) {
+    for (int i = 0; i < N; ++i) {
+        delete[] matrix[i];
+    }
+    delete [] matrix;
 }
 
 // Prints matrix to standard output
