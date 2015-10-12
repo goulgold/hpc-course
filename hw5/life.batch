@@ -5,5 +5,11 @@
 #SBATCH -p normal        # Queue (partition) name -- normal, development, etc.
 #SBATCH -t 00:05:00      # Run time (hh:mm:ss) - 5 minutes
 #SBATCH -A TG-CCR150026
-
-./life 10 20000
+export OMP_NUM_THREADS=2
+./life 50 20000
+export OMP_NUM_THREADS=10
+./life 50 20000
+export OMP_NUM_THREADS=20
+./life 50 20000
+export OMP_NUM_THREADS=40
+./life 50 20000

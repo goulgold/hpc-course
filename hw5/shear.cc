@@ -5,8 +5,9 @@
  * Instructor Bryan Mills, PhD (bmills@cs.pitt.edu)
  * STUDENTS: Implement OpenMP parallel shear sort.
  */
-
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #include <math.h>
 #include "timer.h"
 #include "io.h"
@@ -34,7 +35,7 @@ void LineSort(int **A, int begin, int step, int end) {
 }
 void OddEvenRowSort(int **A, int M) {
     int i;
-    #pragma omp parallel for num_threads(thread_count) \
+    #pragma omp parallel for \
         default(none) shared(A, M) private(i)
     for (i = 0; i < M; ++i) {
        if (i % 2 == 0) {
@@ -46,7 +47,7 @@ void OddEvenRowSort(int **A, int M) {
 }
 void OddEvenColSort(int **A, int M) {
     int i;
-    #pragma omp parallel for num_threads(thread_count) \
+    #pragma omp parallel for \
         default(none) shared(A, M) private(i)
     for (i = 0; i < M; ++i) {
             LineSort(A, i, M, M*(M - 1) + i);
@@ -120,6 +121,24 @@ int main(int argc, char* argv[]) {
   shear_sort(A,M);
   // stopping timer
   elapsedTime = timerStop();
+
+// DEBUG: Test accuracy of algorithm
+  for (int i = 0; i < M; i += 2) {
+      for (int j = 0; j < M-1; ++j) {
+          if (A[i][j] > A[i][j+1]) printf("Error: %d, %d\n", i, j);
+  }
+}
+  for (int i = 1; i < M; i += 2) {
+      for (int j = 0; j < M-1; ++j) {
+          if (A[i][j] < A[i][j+1]) printf("Error: %d, %d\n", i, j);
+  }
+}
+
+  for (int i = 0; i < M-1; ++i) {
+      if (A[i][M-1] > A[i+1][M-1] || A[i][0] > A[i+1][0])
+	  printf("Error: %d\n", i);
+}
+
 
   // print if reasonably small
   if (M <= 10) {

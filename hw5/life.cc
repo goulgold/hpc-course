@@ -8,11 +8,10 @@
  */
 
 #include "timer.h"
+#ifdef _OPENMP
 #include "omp.h"
+#endif
 #include "io.h"
-
-//DEBUG
-int thread_count = 10;
 
 
 int **allocMatrix(int size);
@@ -34,14 +33,12 @@ void conway(int **World, int N, int M){
     int **nextWorld = allocMatrix(N);
     int i;
     for (now_m = 0; now_m < M; ++now_m) {
-        printMatrix(World, N);
-        printf("\n");
-        # pragma omp parallel for num_threads(thread_count) \
+        # pragma omp parallel for \
         default(none) shared(World, nextWorld, N) private(i)
         for (i = 0; i < N*N; ++i) {
             nextWorld[i/N][i%N] = nextState(World, i/N, i%N, N);
         }
-        # pragma omp parallel for num_threads(thread_count) \
+        # pragma omp parallel for \
         default(none) shared(World, nextWorld, N) private(i)
         for (i = 0; i < N*N; ++i) {
             World[i/N][i%N] = nextWorld[i/N][i%N];
