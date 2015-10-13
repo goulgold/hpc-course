@@ -12,6 +12,7 @@
 #include "omp.h"
 #endif
 #include "io.h"
+#include "stdlib.h"
 
 
 int **allocMatrix(int size);
@@ -127,9 +128,11 @@ int main(int argc, char* argv[]) {
   // stopping timer
   elapsedTime = timerStop();
 
-  printMatrix(World,N);
+  // printMatrix(World,N);
 
-  printf("Took %ld ms\n", timerStop());
+  char* pNumThreads;
+  pNumThreads = getenv("OMP_NUM_THREADS"); 
+  printf("(%s, %ld)\n", pNumThreads, timerStop());
 
   // releasing memory
   for (int i=0; i<N; i++) {

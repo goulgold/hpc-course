@@ -144,8 +144,9 @@ int main(int argc, char* argv[]) {
   if (M <= 10) {
     printMatrix(A,M);
   }
-
-  printf("Took %ld ms\n", timerStop());
+  char* pNumThreads;
+  pNumThreads = getenv("OMP_NUM_THREADS"); 
+  printf("(%s, %ld)\n", pNumThreads, timerStop());
 
   // releasing memory
   for (int i=0; i<M; i++) {

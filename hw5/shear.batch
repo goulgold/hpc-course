@@ -5,5 +5,22 @@
 #SBATCH -p normal        # Queue (partition) name -- normal, development, etc.
 #SBATCH -t 00:05:00      # Run time (hh:mm:ss) - 5 minutes
 #SBATCH -A TG-CCR150026
-
-./shear 1024
+echo N=40960000
+export OMP_NUM_THREADS=1
+./shear 40960000
+export OMP_NUM_THREADS=2
+./shear 40960000
+export OMP_NUM_THREADS=3
+./shear 40960000
+export OMP_NUM_THREADS=4
+./shear 40960000
+export OMP_NUM_THREADS=5
+./shear 40960000
+export OMP_NUM_THREADS=8
+./shear 40960000
+export OMP_NUM_THREADS=20
+./shear 40960000
+export OMP_NUM_THREADS=50
+./shear 40960000
+export OMP_NUM_THREADS=100
+./shear 40960000
