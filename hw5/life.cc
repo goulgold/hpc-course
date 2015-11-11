@@ -128,10 +128,10 @@ int main(int argc, char* argv[]) {
   // stopping timer
   elapsedTime = timerStop();
 
-  // printMatrix(World,N);
+  printMatrix(World,N);
 
   char* pNumThreads;
-  pNumThreads = getenv("OMP_NUM_THREADS"); 
+  pNumThreads = getenv("OMP_NUM_THREADS");
   printf("(%s, %ld)\n", pNumThreads, timerStop());
 
   // releasing memory

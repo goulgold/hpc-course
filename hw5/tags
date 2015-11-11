@@ -1,0 +1,33 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+LineSort	shear.cc	/^void LineSort(int **A, int begin, int step, int end) {$/;"	f	signature:(int **A, int begin, int step, int end)
+M	shear.cc	/^int N, M;$/;"	v
+MAX_VALUE	shear.cc	16;"	d	file:
+N	shear.cc	/^int N, M;$/;"	v
+OddEvenColSort	shear.cc	/^void OddEvenColSort(int **A, int M) {$/;"	f	signature:(int **A, int M)
+OddEvenRowSort	shear.cc	/^void OddEvenRowSort(int **A, int M) {$/;"	f	signature:(int **A, int M)
+allocMatrix	life.cc	/^int **allocMatrix(int size) {$/;"	f	signature:(int size)
+allocMatrix	life.cc	/^int **allocMatrix(int size);$/;"	p	file:	signature:(int size)
+allocMatrix	shear.cc	/^int **allocMatrix(int size) {$/;"	f	signature:(int size)
+compare	shear.cc	/^inline int compare (const void * a, const void * b)$/;"	f	signature:(const void * a, const void * b)
+compareMatrix	io.h	/^int compareMatrix(int **M1, int **M2, int N) {$/;"	f	signature:(int **M1, int **M2, int N)
+conway	life.cc	/^void conway(int **World, int N, int M){$/;"	f	signature:(int **World, int N, int M)
+getNeighbor	life.cc	/^int getNeighbor(int **World,int row,int col,int N) {$/;"	f	signature:(int **World,int row,int col,int N)
+getNeighbor	life.cc	/^int getNeighbor(int **World,int row,int col,int N);$/;"	p	file:	signature:(int **World,int row,int col,int N)
+isLive	life.cc	/^inline bool isLive(int value) {$/;"	f	signature:(int value)
+main	life.cc	/^int main(int argc, char* argv[]) {$/;"	f	signature:(int argc, char* argv[])
+main	shear.cc	/^int main(int argc, char* argv[]) {$/;"	f	signature:(int argc, char* argv[])
+nextState	life.cc	/^int nextState(int **World, int row, int col, int N) {$/;"	f	signature:(int **World, int row, int col, int N)
+nextState	life.cc	/^int nextState(int **World, int row, int col, int N);$/;"	p	file:	signature:(int **World, int row, int col, int N)
+printMatrix	io.h	/^void printMatrix(int **matrix, int N){$/;"	f	signature:(int **matrix, int N)
+readMatrixFile	io.h	/^int readMatrixFile(int **matrix, int N, char *filename){$/;"	f	signature:(int **matrix, int N, char *filename)
+removeMatrix	io.h	/^void removeMatrix(int **matrix, int N) {$/;"	f	signature:(int **matrix, int N)
+shear_sort	shear.cc	/^void shear_sort(int **A, int M) {$/;"	f	signature:(int **A, int M)
+startTime	timer.h	/^long startTime;$/;"	v
+thread_count	shear.cc	/^int thread_count = 10;$/;"	v
+timerStart	timer.h	/^void timerStart(){$/;"	f	signature:()
+timerStop	timer.h	/^long timerStop(){$/;"	f	signature:()
