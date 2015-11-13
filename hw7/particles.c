@@ -2,9 +2,9 @@
  * University of Pittsburgh
  * Department of Computer Science
  * CS1645: Introduction to HPC Systems
- * Student: 
+ * Student:
  * Instructor: Bryan Mills, University of Pittsburgh
- * MPI particle-interaction code. 
+ * MPI particle-interaction code.
  */
 
 #include "mpi.h"
@@ -41,23 +41,32 @@ void interact(struct Particle *source, struct Particle *destination);
 void compute_interaction(struct Particle *source, struct Particle *destination, int limit);
 void compute_self_interaction(struct Particle *set, int size);
 void merge(struct Particle *first, struct Particle *second, int limit);
+int read_file(struct Particle *set, int size, char *file_name);
 
-// Main function
-main(int argc, char** argv){
-  int myRank;// Rank of process
-  int p;// Number of processes
+void StartSimulation();
+void Initial();
+void GatherResult();
+
+  int pro_num; // Number of process should be passed.
   int n;// Number of total particles
-  int previous;// Previous rank in the ring
-  int next;// Next rank in the ring
   int tag = TAG;// Tag for message
-  int number;// Number of local particles
+  int err; // return value of any func.
   struct Particle *globals;// Array of all particles in the system
   struct Particle *locals;// Array of local particles
   struct Particle *remotes;// Array of foreign particles
+  int myRank;// Rank of process
+  int p;// Number of processes
+  int previous;// Previous rank in the ring
+  int next;// Next rank in the ring
+  int number;// Number of local particles
   char *file_name;// File name
   MPI_Status status;// Return status for receive
   int j, rounds, initiator, sender;
   double start_time, end_time;
+
+
+// Main function
+int main(int argc, char** argv){
 
   // checking the number of parameters
   if(argc < 2){
@@ -65,7 +74,7 @@ main(int argc, char** argv){
     printf("Usage: %s <number of particles> [<file>]\n", argv[0]);
     exit(1);
   }
-  
+
   // getting number of particles
   n = atoi(argv[1]);
 
@@ -80,22 +89,28 @@ main(int argc, char** argv){
       return 0;
     }
   }
+  // (p-1)/2 processes should be passed.
+  pro_num = (p - 1) / 2;
   srand(myRank+myRank*CONSTANT);
 
   // acquiring memory for particle arrays
   number = n / p;
   locals = (struct Particle *) malloc(number * sizeof(struct Particle));
   remotes = (struct Particle *) malloc(number * sizeof(struct Particle));
+  globals = (struct Particle *) malloc(n * sizeof(struct Particle));
 
   // checking for file information
   if(argc == 3){
     if(myRank == 0){
-      globals = (struct Particle *) malloc(n * sizeof(struct Particle));
-
       // YOUR CODE GOES HERE (reading particles from file)
-
+    file_name = argv[2];
+    read_file(globals, n, file_name);
+    printf("Number of process: %d\n", p);
+    printf("Number in one groups: %d\n", number);
+    //printf("Gloal: \n");
+    //print_particles(globals, n);
     }
-    
+
     // To send/recv (or scatter/gather) you will need to learn how to
     // transfer structs of floats, treat it as a contiguous block of
     // floats. Here is an example:
@@ -116,8 +131,10 @@ main(int argc, char** argv){
     // might consider asyncronous send/recv.
 
     // YOUR CODE GOES HERE (distributing particles among processors)
-    
+
+    // Random Particles
   } else {
+    globals = (struct Particle *) malloc(n * sizeof(struct Particle));
     // random initialization of local particle array
     for(j = 0; j < number; j++){
       locals[j].x = random_value(POSITION);
@@ -127,33 +144,35 @@ main(int argc, char** argv){
       locals[j].mass = MASS;
     }
   }
-  
+    // Copy Gloals to every locals
+    Initial();
   // starting timer
   if(myRank == 0){
     start_time = MPI_Wtime();
   }
-  
-  // YOUR CODE GOES HERE (ring algorithm)
 
+  // YOUR CODE GOES HERE (ring algorithm)
+  StartSimulation();
   // stopping timer
   if(myRank == 0){
     end_time = MPI_Wtime();
     printf("Duration: %f seconds\n", (end_time-start_time));
   }
-  
+
+    GatherResult();
   // printing information on particles
   if(argc == 3){
-    
-    // YOUR CODE GOES HERE (collect particles at rank 0)
 
+    // YOUR CODE GOES HERE (collect particles at rank 0)
     if(myRank == 0) {
+      printf("Result:\n");
       print_particles(globals,n);
     }
   }
 
-
   // finalizing MPI structures
   MPI_Finalize();
+  return 0;
 }
 
 // Function for random value generation
@@ -181,6 +200,98 @@ void print_particles(struct Particle *particles, int n){
   }
 }
 
+//Scatter Data to every process
+void Initial() {
+    MPI_Scatter(globals,
+                number * (sizeof (struct Particle)) / sizeof(float),
+                MPI_FLOAT,
+                locals,
+                number * (sizeof (struct Particle)) / sizeof(float),
+                MPI_FLOAT,
+                0,
+                MPI_COMM_WORLD
+                );
+}
+
+void GatherResult() {
+    MPI_Gather(locals,
+               number * (sizeof (struct Particle)) / sizeof(float),
+               MPI_FLOAT,
+               globals,
+               number * (sizeof (struct Particle)) / sizeof(float),
+               MPI_FLOAT,
+               0,
+               MPI_COMM_WORLD
+               );
+    //printf("%d Gather completed.\n", myRank);
+}
+
+// Start Simulation. Follow 1-8 steps.
+void StartSimulation() {
+    // next_rank;
+    //printf("locals of %d:\n", myRank);
+    //print_particles(locals, number);
+    int next_rank = (myRank + 1) % p;
+    MPI_Request request;
+    MPI_Status status;
+    // Send local to next process
+    MPI_Isend(locals,
+              number * (sizeof (struct Particle)) / sizeof(float),
+              MPI_FLOAT,
+              next_rank,
+              myRank+1,
+              MPI_COMM_WORLD,
+              &request);
+    //printf("process %d send to %d\n", myRank, next_rank);
+    int recv_tag;
+    // receive all particles from all possible pro_num
+    for (int i = 1; i <= pro_num; ++i) {
+        tag = (myRank - i + p) % p + 1;
+        MPI_Irecv(remotes,
+                  number * (sizeof (struct Particle)) / sizeof(float),
+                  MPI_FLOAT,
+                  (myRank - 1 + p) % p, // All particles comes from previous process
+                  tag, // All possible tag
+                  MPI_COMM_WORLD,
+                  &request);
+        MPI_Wait(&request, &status);
+        // compute and store
+        compute_interaction(locals, remotes, number);
+        // If this is last node of ring, send to original one.
+        if (tag == (myRank - pro_num + p) % p + 1) {
+            //printf("%d begin send tag %d back\n", myRank, tag);
+            MPI_Isend(remotes,
+                      number * (sizeof (struct Particle)) / sizeof(float),
+                      MPI_FLOAT,
+                      tag-1,
+                      tag,
+                      MPI_COMM_WORLD,
+                      &request);
+        } else { // else send to next_rank
+            MPI_Isend(remotes,
+                      number * (sizeof (struct Particle)) / sizeof(float),
+                      MPI_FLOAT,
+                      next_rank,
+                      tag,
+                      MPI_COMM_WORLD,
+                      &request);
+        }
+    }
+
+    MPI_Irecv(remotes,
+              number * (sizeof (struct Particle)) / sizeof(float),
+              MPI_FLOAT,
+              (myRank + pro_num) % p,
+              myRank + 1,
+              MPI_COMM_WORLD,
+              &request);
+    MPI_Wait(&request, &status);
+    compute_self_interaction(locals, number);
+    merge(locals, remotes, number);
+    //printf("%d process completed.\n", myRank);
+
+}
+
 // Function for computing interaction among two particles
 // There is an extra test for interaction of identical particles, in which case there is no effect over the destination
 void interact(struct Particle *first, struct Particle *second){
@@ -201,7 +312,7 @@ void interact(struct Particle *first, struct Particle *second){
   // updating sources's structure
   first->fx = first->fx + fx;
   first->fy = first->fy + fy;
-  
+
   // updating destination's structure
   second->fx = second->fx - fx;
   second->fy = second->fy - fy;
@@ -211,7 +322,7 @@ void interact(struct Particle *first, struct Particle *second){
 // Function for computing interaction between two sets of particles
 void compute_interaction(struct Particle *first, struct Particle *second, int limit){
   int j,k;
-  
+
   for(j = 0; j < limit; j++){
     for(k = 0; k < limit; k++){
       interact(&first[j],&second[k]);
@@ -222,7 +333,7 @@ void compute_interaction(struct Particle *first, struct Particle *second, int li
 // Function for computing interaction between two sets of particles
 void compute_self_interaction(struct Particle *set, int size){
   int j,k;
-  
+
   for(j = 0; j < size; j++){
     for(k = j+1; k < size; k++){
       interact(&set[j],&set[k]);
@@ -234,7 +345,7 @@ void compute_self_interaction(struct Particle *set, int size){
 // Permanent changes reside only in first array
 void merge(struct Particle *first, struct Particle *second, int limit){
   int j;
-  
+
   for(j = 0; j < limit; j++){
     first[j].fx += second[j].fx;
     first[j].fy += second[j].fy;
@@ -254,11 +365,11 @@ int read_file(struct Particle *set, int size, char *file_name){
 
   // reading particle values
   for(int i=0; i<size; i++){
-    fscanf(ifp, "%f\t%f\t%f", &set[i].x, &set[i].y, &set[i].mass);
+    err = fscanf(ifp, "%f\t%f\t%f", &set[i].x, &set[i].y, &set[i].mass);
     set[i].fx = 0.0;
     set[i].fy = 0.0;
   }
-  
+
   // closing file
   fclose(ifp);
 
