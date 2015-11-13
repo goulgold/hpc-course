@@ -38,7 +38,7 @@ struct Particle{
 float random_value(int type);
 void print_particles(struct Particle *particles, int n);
 void interact(struct Particle *source, struct Particle *destination);
-void compute_interaction(struct Particle *source, struct Particle *destination, int limit);
+void compute_interaction(struct Particle *source, struct Particle *destination, int size1, int size2);
 void compute_self_interaction(struct Particle *set, int size);
 void merge(struct Particle *first, struct Particle *second, int limit);
 int read_file(struct Particle *set, int size, char *file_name);
@@ -48,9 +48,12 @@ void Initial();
 void GatherResult();
 
   int pro_num; // Number of process should be passed.
+  const int sizeofp = (sizeof(struct Particle)) / sizeof(float); // How much float a particle is
   int n;// Number of total particles
   int tag = TAG;// Tag for message
   int err; // return value of any func.
+  int *displs; // Because size of particles are different. it's displacement of every groups.
+  int *rcounts; // How many Particles in each group.
   struct Particle *globals;// Array of all particles in the system
   struct Particle *locals;// Array of local particles
   struct Particle *remotes;// Array of foreign particles
@@ -94,10 +97,12 @@ int main(int argc, char** argv){
   srand(myRank+myRank*CONSTANT);
 
   // acquiring memory for particle arrays
-  number = n / p;
+  number = n / p + 1;
   locals = (struct Particle *) malloc(number * sizeof(struct Particle));
   remotes = (struct Particle *) malloc(number * sizeof(struct Particle));
   globals = (struct Particle *) malloc(n * sizeof(struct Particle));
+  displs = (int *) malloc(p * sizeof(int));
+  rcounts = (int *) malloc(p * sizeof(int));
 
   // checking for file information
   if(argc == 3){
@@ -106,7 +111,6 @@ int main(int argc, char** argv){
     file_name = argv[2];
     read_file(globals, n, file_name);
     printf("Number of process: %d\n", p);
-    printf("Number in one groups: %d\n", number);
     //printf("Gloal: \n");
     //print_particles(globals, n);
     }
@@ -134,7 +138,6 @@ int main(int argc, char** argv){
 
     // Random Particles
   } else {
-    globals = (struct Particle *) malloc(n * sizeof(struct Particle));
     // random initialization of local particle array
     for(j = 0; j < number; j++){
       locals[j].x = random_value(POSITION);
@@ -202,41 +205,57 @@ void print_particles(struct Particle *particles, int n){
 
 //Scatter Data to every process
 void Initial() {
-    MPI_Scatter(globals,
-                number * (sizeof (struct Particle)) / sizeof(float),
+    int num_q = n / p;
+    int num_r = n % p;
+    for (int i = 0; i < p; ++i) {
+      if (i < num_r) {
+          rcounts[i] = (num_q + 1) * sizeofp;
+      } else {
+        rcounts[i] = num_q * sizeofp;
+      }
+      if (i == 0) {
+           displs[i] = 0;
+      } else {
+           displs[i] = (displs[i-1] + rcounts[i-1]);
+      }
+    }
+    MPI_Scatterv(globals,
+                 rcounts,
+                 displs,
+                 MPI_FLOAT,
+                 locals,
+                 rcounts[myRank],
+                 MPI_FLOAT,
+                 0,
+                 MPI_COMM_WORLD
+                 );
+}
+
+void GatherResult() {
+    MPI_Gatherv(locals,
+                rcounts[myRank],
                 MPI_FLOAT,
-                locals,
-                number * (sizeof (struct Particle)) / sizeof(float),
+                globals,
+                rcounts,
+                displs,
                 MPI_FLOAT,
                 0,
                 MPI_COMM_WORLD
                 );
-}
-
-void GatherResult() {
-    MPI_Gather(locals,
-               number * (sizeof (struct Particle)) / sizeof(float),
-               MPI_FLOAT,
-               globals,
-               number * (sizeof (struct Particle)) / sizeof(float),
-               MPI_FLOAT,
-               0,
-               MPI_COMM_WORLD
-               );
     //printf("%d Gather completed.\n", myRank);
 }
 
 // Start Simulation. Follow 1-8 steps.
 void StartSimulation() {
     // next_rank;
-    //printf("locals of %d:\n", myRank);
-    //print_particles(locals, number);
+    printf("%d in %d\n", rcounts[myRank] / sizeofp, myRank);
+    print_particles(locals, rcounts[myRank] / sizeofp);
     int next_rank = (myRank + 1) % p;
     MPI_Request request;
     MPI_Status status;
     // Send local to next process
     MPI_Isend(locals,
-              number * (sizeof (struct Particle)) / sizeof(float),
+              rcounts[myRank],
               MPI_FLOAT,
               next_rank,
               myRank+1,
@@ -248,7 +267,7 @@ void StartSimulation() {
     for (int i = 1; i <= pro_num; ++i) {
         tag = (myRank - i + p) % p + 1;
         MPI_Irecv(remotes,
-                  number * (sizeof (struct Particle)) / sizeof(float),
+                  rcounts[tag-1],
                   MPI_FLOAT,
                   (myRank - 1 + p) % p, // All particles comes from previous process
                   tag, // All possible tag
@@ -256,12 +275,12 @@ void StartSimulation() {
                   &request);
         MPI_Wait(&request, &status);
         // compute and store
-        compute_interaction(locals, remotes, number);
+        compute_interaction(locals, remotes, rcounts[myRank] / sizeofp,rcounts[tag-1] / sizeofp);
         // If this is last node of ring, send to original one.
         if (tag == (myRank - pro_num + p) % p + 1) {
             //printf("%d begin send tag %d back\n", myRank, tag);
             MPI_Isend(remotes,
-                      number * (sizeof (struct Particle)) / sizeof(float),
+                      rcounts[tag-1],
                       MPI_FLOAT,
                       tag-1,
                       tag,
@@ -269,7 +288,7 @@ void StartSimulation() {
                       &request);
         } else { // else send to next_rank
             MPI_Isend(remotes,
-                      number * (sizeof (struct Particle)) / sizeof(float),
+                      rcounts[tag-1],
                       MPI_FLOAT,
                       next_rank,
                       tag,
@@ -279,15 +298,15 @@ void StartSimulation() {
     }
 
     MPI_Irecv(remotes,
-              number * (sizeof (struct Particle)) / sizeof(float),
+              rcounts[myRank],
               MPI_FLOAT,
               (myRank + pro_num) % p,
               myRank + 1,
               MPI_COMM_WORLD,
               &request);
     MPI_Wait(&request, &status);
-    compute_self_interaction(locals, number);
-    merge(locals, remotes, number);
+    compute_self_interaction(locals, rcounts[myRank] / sizeofp);
+    merge(locals, remotes, rcounts[myRank] / sizeofp);
     //printf("%d process completed.\n", myRank);
 
 }
@@ -320,11 +339,11 @@ void interact(struct Particle *first, struct Particle *second){
 }
 
 // Function for computing interaction between two sets of particles
-void compute_interaction(struct Particle *first, struct Particle *second, int limit){
+void compute_interaction(struct Particle *first, struct Particle *second, int size1, int size2){
   int j,k;
 
-  for(j = 0; j < limit; j++){
-    for(k = 0; k < limit; k++){
+  for(j = 0; j < size1; j++){
+      for(k = 0; k < size2; k++){
       interact(&first[j],&second[k]);
     }
   }
