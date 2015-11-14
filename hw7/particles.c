@@ -249,7 +249,7 @@ void GatherResult() {
 void StartSimulation() {
     // next_rank;
     printf("%d in %d\n", rcounts[myRank] / sizeofp, myRank);
-    print_particles(locals, rcounts[myRank] / sizeofp);
+    //print_particles(locals, rcounts[myRank] / sizeofp);
     int next_rank = (myRank + 1) % p;
     MPI_Request request;
     MPI_Status status;
